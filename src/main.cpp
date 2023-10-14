@@ -41,7 +41,7 @@ void setup() {
 
 void loop() {
   checkPresence();
-  Serial.print(F("{"));
+  Serial.print(F("{\"error\": \"ok\", "));
   bool first = true;
 
   for (int i = 0; i < NO_CHANNELS; i++) {
