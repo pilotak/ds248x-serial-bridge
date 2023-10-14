@@ -41,16 +41,18 @@ void setup() {
 
 void loop() {
   checkPresence();
-  Serial.print("{");
+  Serial.print(F("{"));
   bool first = true;
 
   for (int i = 0; i < NO_CHANNELS; i++) {
     oneWire.setChannel(i);
 
+    // check if sensor on bus
     if (!oneWire.reset()) {
       continue;
     }
 
+    // write to all sensors
     oneWire.skip();
 
     // start conversion
@@ -62,7 +64,7 @@ void loop() {
     oneWire.reset();
 
     while (oneWire.wireSearch(rom)) {
-      // Read Scratchpad
+      // read Scratchpad
       oneWire.write(0xBE);
 
       for (uint8_t i = 0; i < 9; i++) {
@@ -87,7 +89,7 @@ void loop() {
 
         case 0x28: {  // DS18B20
 
-          char cfg = (data[4] & 0x60);  // default is 12 bit resolution
+          uint8_t cfg = (data[4] & 0x60);  // default is 12 bit resolution
 
           if (cfg == 0x00) {  // 9 bit resolution
             raw &= ~7;
@@ -98,10 +100,11 @@ void loop() {
           } else if (cfg == 0x40) {  // 11 bit res
             raw &= ~1;
           }
-        }
+        } break;
 
         default:
-          break;
+          // skip unknown devices
+          continue;
       }
 
       // print data
