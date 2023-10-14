@@ -8,8 +8,9 @@ uint8_t data[9] = {0};
 
 void (*resetFunc)(void) = 0;
 
-void printAddress(uint8_t deviceAddress[]) {
+void print(uint8_t deviceAddress[], float temp) {
   Serial.print(F("\"0x"));
+
   for (uint8_t i = 0; i < 8; i++) {
     // zero pad the address
     if (deviceAddress[i] < 16) {
@@ -17,7 +18,9 @@ void printAddress(uint8_t deviceAddress[]) {
     }
     Serial.print(deviceAddress[i], HEX);
   }
-  Serial.print(F("\""));
+
+  Serial.print(F("\": "));
+  Serial.print(temp, 2);
 }
 
 void checkPresence() {
@@ -41,7 +44,7 @@ void loop() {
   Serial.print("{");
   bool first = true;
 
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < NO_CHANNELS; i++) {
     oneWire.setChannel(i);
 
     if (!oneWire.reset()) {
@@ -101,16 +104,14 @@ void loop() {
           break;
       }
 
-      // output data
+      // print data
       if (!first) {
-        Serial.print(F(","));
+        Serial.print(F(", "));
       }
 
       first = false;
 
-      printAddress(rom);
-      Serial.print(F(":"));
-      Serial.print(((float)raw) / 16, 2);
+      print(rom, ((float)raw) / 16);
     }
 
     oneWire.reset_search();
