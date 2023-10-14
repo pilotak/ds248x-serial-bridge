@@ -9,7 +9,7 @@ uint8_t data[9] = {0};
 void (*resetFunc)(void) = 0;
 
 void print(uint8_t deviceAddress[], float temp) {
-  Serial.print(F("\"0x"));
+  Serial.print(F(", \"0x"));
 
   for (uint8_t i = 0; i < 8; i++) {
     // zero pad the address
@@ -41,8 +41,7 @@ void setup() {
 
 void loop() {
   checkPresence();
-  Serial.print(F("{\"error\": \"ok\", "));
-  bool first = true;
+  Serial.print(F("{\"error\": \"ok\""));
 
   for (int i = 0; i < NO_CHANNELS; i++) {
     oneWire.setChannel(i);
@@ -108,12 +107,6 @@ void loop() {
       }
 
       // print data
-      if (!first) {
-        Serial.print(F(", "));
-      }
-
-      first = false;
-
       print(rom, ((float)raw) / 16);
     }
 
