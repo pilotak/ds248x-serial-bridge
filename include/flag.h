@@ -1,6 +1,7 @@
 void flag() {
-  Serial.println(F("{\"error\": \"overcurrent\"}"));
   digitalWrite(POWER_PIN, LOW);
+  Serial.println(F("{\"error\": \"overcurrent\"}"));
+  Serial.flush();
   delay(5000);
   resetFunc();
 }

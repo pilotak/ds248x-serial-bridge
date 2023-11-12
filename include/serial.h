@@ -9,6 +9,7 @@ void serialParse() {
   if (strstr(buffer, "restart") != NULL) {
     digitalWrite(POWER_PIN, LOW);
     Serial.println(F("{\"restart\": \"ok\"}"));
+    Serial.flush();
     delay(1000);
     resetFunc();
   }
@@ -33,7 +34,9 @@ void serialRead() {
     last_data_timeout = millis();
 
     if (buffer_index == BUFFER_SIZE) {  // prevent overflow
-      Serial.flush();
+      while (Serial.available()) {
+        Serial.read();
+      }
       buffer_index = 0;
     }
   }

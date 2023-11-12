@@ -31,6 +31,8 @@ Just send
 { "restart": true }
 ```
 
+> In fact sending just `restart` without beeing json is fine too
+
 Responds with
 
 ```json
