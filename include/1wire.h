@@ -3,10 +3,27 @@
 
 void (*resetFunc)(void) = 0;
 
+char serial_buffer[SERIAL_BUFFER_SIZE] = {0};
+uint16_t serial_buffer_index = 0;
+
 OneWire oneWire;
 uint8_t rom[8] = {0};
 uint8_t data[9] = {0};
 uint32_t previousMillis = 0;
+
+void appendToBuffer(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  int result = vsnprintf(serial_buffer + serial_buffer_index, SERIAL_BUFFER_SIZE - serial_buffer_index, format, args);
+  va_end(args);
+
+  if (result >= 0 && serial_buffer_index + result < SERIAL_BUFFER_SIZE) {
+    serial_buffer_index += result;
+  } else {
+    serial_buffer_index = 0;
+    Serial.println(F("{\"error\": \"full_buffer\"}"));
+  }
+}
 
 void oneWireCheck() {
   if (!oneWire.checkPresence()) {
@@ -18,25 +35,19 @@ void oneWireCheck() {
   }
 }
 
-void oneWirePrint(uint8_t deviceAddress[], float temp) {
-  Serial.print(F(", \"0x"));
+void oneWirePrint(uint8_t deviceAddress[], int16_t temp) {
+  appendToBuffer(",\"0x");
 
   for (uint8_t i = 0; i < 8; i++) {
-    // zero pad the address
-    if (deviceAddress[i] < 16) {
-      Serial.print(F("0"));
-    }
-    Serial.print(deviceAddress[i], HEX);
+    appendToBuffer("%02X", deviceAddress[i]);
   }
-
-  Serial.print(F("\": "));
-  Serial.print(temp, 2);
+  appendToBuffer("\": %i.%u", temp / 16, abs(temp % 16) * 1000 / 16);
 }
 
 void oneWireRead() {
   digitalWrite(STATUS_PIN, HIGH);
 
-  Serial.print(F("{\"error\": \"ok\""));
+  appendToBuffer("{\"error\": \"ok\"");
 
   for (int i = 0; i < NO_CHANNELS; i++) {
     oneWire.setChannel(i);
@@ -70,7 +81,10 @@ void oneWireRead() {
 
       // check CRC
       if (!OneWire::crc8(data, 8)) {
-        continue;
+        Serial.print(F("{\"error\": \"crc_channel_"));
+        Serial.print(i);
+        Serial.println(F("\"}"));
+        break;
       }
 
       int16_t raw = (data[1] << 8) | data[0];
@@ -105,12 +119,19 @@ void oneWireRead() {
       }
 
       // print data
-      oneWirePrint(rom, ((float)raw) / 16);
+      oneWirePrint(rom, raw);
     }
 
     oneWire.reset_search();
   }
-  Serial.println(F("}"));
+
+  appendToBuffer("}");
+
+  // send
+  Serial.println(serial_buffer);
+  serial_buffer_index = 0;
+  memset(serial_buffer, 0, SERIAL_BUFFER_SIZE);
+
   digitalWrite(STATUS_PIN, LOW);
 }
 
