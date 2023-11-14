@@ -22,6 +22,8 @@ Output example
 - `overcurrent`, restart after 5 sec
 - `ok`
 - `no_device` (DS248x not responsing), restart after 5 sec
+- `crc_channel_x` where "x" is channel number
+- `full_buffer` serial buffer overflow
 
 ### Restart
 

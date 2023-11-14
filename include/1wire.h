@@ -57,25 +57,26 @@ void oneWireRead() {
       continue;
     }
 
-    // check now due to delays
-    serialRead();
-
-    // write to all sensors
-    oneWire.skip();
-
-    // start conversion
-    oneWire.write(0x44, true);
-
-    // wait for conversion
-    delay(750);
-
-    oneWire.reset();
-
     while (oneWire.wireSearch(rom)) {
+      oneWire.reset();
+      oneWire.select(rom);
+
+      // start conversion
+      oneWire.write(0x44, true);
+
+      // wait for conversion
+      delay(850);
+
+      // check serial now due to delays
+      serialRead();
+
+      oneWire.reset();
+      oneWire.select(rom);
+
       // read Scratchpad
       oneWire.write(0xBE);
 
-      for (uint8_t i = 0; i < 9; i++) {
+      for (uint8_t i = 0; i < sizeof(data); i++) {
         data[i] = oneWire.read();
       }
 
@@ -90,7 +91,8 @@ void oneWireRead() {
       int16_t raw = (data[1] << 8) | data[0];
 
       switch (rom[0]) {
-        case 0x10: {  // DS18S20
+        // DS18S20
+        case 0x10: {
           raw = raw << 3;
 
           if (data[7] == 0x10) {
@@ -98,8 +100,8 @@ void oneWireRead() {
           }
         } break;
 
-        case 0x28: {  // DS18B20
-
+          // DS18B20
+        case 0x28: {
           uint8_t cfg = (data[4] & 0x60);  // default is 12 bit resolution
 
           if (cfg == 0x00) {  // 9 bit resolution
@@ -126,13 +128,12 @@ void oneWireRead() {
   }
 
   appendToBuffer("}");
+  digitalWrite(STATUS_PIN, LOW);
 
   // send
   Serial.println(serial_buffer);
   serial_buffer_index = 0;
   memset(serial_buffer, 0, SERIAL_BUFFER_SIZE);
-
-  digitalWrite(STATUS_PIN, LOW);
 }
 
 void oneWireSetup() {
